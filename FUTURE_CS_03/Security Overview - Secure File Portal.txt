@@ -1,0 +1,74 @@
+Security Overview: Secure File Upload Portal
+Author: Samarpit Pandey
+Date: July 31, 2025
+
+1. System Architecture
+The system is a monolithic web application built with the Python Flask framework. The architecture is straightforward and consists of three main components:
+
+Frontend (Client-Side): A single-page user interface rendered from a standard HTML5 template, styled with Tailwind CSS. It allows users to select a file from their local machine and submit it for upload.
+
+Backend (Server-Side): A Flask application (app.py) that handles all logic. It exposes endpoints for rendering the main page, processing file uploads, and handling download requests. It is responsible for the entire encryption and decryption workflow.
+
+File Storage: A simple directory on the server's local filesystem (encrypted_uploads/) where the encrypted files are stored.
+
+The data flow is as follows:
+
+A user selects a file and clicks "Upload."
+
+The browser sends the file to the Flask backend via a POST request.
+
+The Flask application reads the file into memory, encrypts its content using AES-256 GCM, and saves the resulting ciphertext to the encrypted_uploads directory.
+
+When a user clicks "Download," the Flask backend reads the encrypted file, decrypts it in memory, and serves the original plaintext data back to the user with the appropriate headers to trigger a file download.
+
+2. Encryption Method: AES-256 GCM
+For this project, I chose the Advanced Encryption Standard (AES) algorithm, specifically using the Galois/Counter Mode (GCM) of operation.
+
+Why AES? AES is the industry standard for symmetric encryption, trusted by governments and corporations worldwide. It is highly secure, well-vetted, and performant. I have chosen a 256-bit key for maximum security.
+
+Why GCM Mode? AES on its own only provides confidentiality. GCM is an Authenticated Encryption with Associated Data (AEAD) mode. This is a crucial feature because it provides two distinct security benefits:
+
+Confidentiality: It encrypts the data, ensuring that no one without the key can read it.
+
+Authenticity (Integrity): It generates an authentication tag during encryption. During decryption, this tag is used to verify that the data has not been tampered with or altered in any way since it was encrypted. If even a single bit of the ciphertext is changed, the integrity check will fail, and the decryption process will be aborted. This protects against active attackers who might try to modify encrypted files.
+
+The PyCryptodome library is used to implement this. For each encryption, a unique nonce (number used once) is generated. This nonce is not secret but is essential for the security of GCM mode. It is stored alongside the encrypted data and used during decryption.
+
+3. Encryption Key Management
+This is the most critical security aspect of the application. The strength of AES encryption is entirely dependent on the secrecy of the key.
+
+Current Implementation (Demonstration Only)
+In the current app.py code, the AES key is hardcoded directly into the source file:
+AES_KEY = b'MySuperSecretKey1234567890123456'
+
+This approach is highly insecure and is used for demonstration purposes only.
+
+Risks of Hardcoding Keys:
+
+Exposure in Source Control: If the code is checked into a version control system like Git, the key becomes part of the repository's history and is accessible to anyone who can view the code.
+
+Difficult Rotation: Changing the key requires modifying the code and redeploying the application.
+
+Violation of Separation of Concerns: Code should not contain secrets.
+
+Recommended Production-Level Key Management
+In a real-world, production environment, the key must be managed securely and kept separate from the application code. Secure alternatives include:
+
+Environment Variables: The key can be stored as an environment variable on the server. The application would then read the key from os.environ.get('AES_KEY'). This is a significant improvement, as the key is no longer in the code.
+
+Secure Configuration Files: The key can be stored in a configuration file (e.g., .env, config.ini) that is located outside the main application directory and has very strict file permissions, so only the application user can read it. This file should be explicitly excluded from version control (e.g., via .gitignore).
+
+Hardware Security Module (HSM): For high-security applications, an HSM is a dedicated physical device that securely stores and manages cryptographic keys. The application makes API calls to the HSM to perform encryption/decryption operations without ever having direct access to the key itself.
+
+Cloud Key Management Services (KMS): Major cloud providers (AWS, Google Cloud, Azure) offer managed KMS solutions. Similar to an HSM, these services handle the storage, rotation, and usage of keys. The application is granted IAM permissions to use a specific key but cannot export or view the key material. This is the recommended best practice for cloud-hosted applications.
+
+4. Security Considerations and Future Improvements
+This application is a proof-of-concept and lacks several security features necessary for a production system:
+
+No Authentication/Authorization: The portal is public. Anyone can upload or download files. A real system would require user accounts, login functionality, and access control lists (ACLs) to ensure users can only access their own files.
+
+Lack of Input Validation: The application does not validate the type or size of the uploaded files (beyond the web server's default limits). An attacker could upload malicious scripts or extremely large files to attempt a Denial of Service (DoS) attack.
+
+Insecure Transport (HTTP): The application runs over HTTP by default. This means that while the file is encrypted at rest on the server, it is transmitted in plaintext between the user's browser and the server. A man-in-the-middle (MITM) attacker could intercept the file before it is encrypted. In production, this application must be deployed behind a reverse proxy (like Nginx) and served over HTTPS using TLS certificates.
+
+Error Handling: Verbose error messages are printed to the console. In production, logging should be more structured, and user-facing errors should be generic to avoid leaking information about the application's internal state.
