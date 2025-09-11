@@ -1,1 +1,1 @@
-# Learning-Internship-Projects
+# Learning and Internship Projects
