@@ -1,0 +1,11 @@
+The Caesar Cipher is a foundational cryptographic algorithm that shifts each letter in a plaintext message by a fixed number of positions down or up the alphabet. 
+This implementation provides a professional-grade tool for both encryption and decryption, illustrating a core concept in symmetric-key cryptography.
+
+Documentation
+Purpose: To provide a reliable, modular, and easy-to-use tool for encrypting and decrypting text using the Caesar Cipher.
+
+Dependencies: Standard Python libraries. No external packages are required.
+
+Functionality: The caesar_cipher function processes a given string by iterating through each character. 
+It identifies uppercase and lowercase letters and applies a modular shift operation. Non-alphabetic characters remain unchanged. 
+The main function offers a command-line interface, handling user input, performing error checking for shift values, and providing clear output.
